@@ -550,19 +550,51 @@
     return null;   // general 또는 echo
   }
 
+  /* 고함과 회장 자랑은 가끔 나와야 웃기다.
+     최근에 썼으면 다시 뽑아서 너무 자주 나오지 않게 한다. */
+  var turnNo = 0;
+  var lastSpecial = {};
+  var GAP = { yell: 8, boast: 6 };
+
+  function specialKind(lines){
+    var t = lines.join(" ");
+    if (/!{10,}/.test(t)) return "yell";
+    if (/회장/.test(t)) return "boast";
+    return null;
+  }
+
+  function tooSoon(kind){
+    if (!kind) return false;
+    var last = lastSpecial[kind];
+    return last != null && (turnNo - last) < GAP[kind];
+  }
+
+  function once(text, pool){
+    if (pool) return draw(pool);
+    var w = keyword(text);
+    if (w && Math.random() < 0.45){
+      return draw("echo").map(function(s){ return s.split("{W}").join(w); });
+    }
+    return draw("general");
+  }
+
   function respond(text){
+    turnNo++;
     var pool = pickPool(text);
-    var lines;
-    if (pool){
-      lines = draw(pool);
-    } else {
-      var w = keyword(text);
-      if (w && Math.random() < 0.45){
-        lines = draw("echo").map(function(s){ return s.split("{W}").join(w); });
-      } else {
+    var lines = once(text, pool);
+
+    // "까불지마"에 대한 고함은 일부러 넣은 것이니 그대로 둔다
+    if (pool !== "shutup"){
+      for (var n = 0; n < 6 && tooSoon(specialKind(lines)); n++){
+        lines = once(text, pool);
+      }
+      for (var m = 0; m < 12 && tooSoon(specialKind(lines)); m++){
         lines = draw("general");
       }
     }
+
+    var kind = specialKind(lines);
+    if (kind) lastSpecial[kind] = turnNo;
     return lines.slice(0, MAXLINES);
   }
 
@@ -680,6 +712,7 @@
   wipeBtn.addEventListener("click", function(){
     clearTimeout(nudgeTimer);
     busy = false; tally = 0; nudgeCount = 0; lastSide = null; bags = {};
+    turnNo = 0; lastSpecial = {}; lastSaid = "";
     tallyEl.textContent = "0";
     log.innerHTML = "";
     boot();
