@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>최X용ver1</title>
+<meta name="description" content="단톡방 말투 그대로 대꾸하는 패러디 채팅봇. 설치도 로그인도 필요 없습니다.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="최X용ver1">
+<meta property="og:description" content="말 걸면 그 말투로 시비 겁니다. 로그인 필요 없음.">
+<meta name="theme-color" content="#BE2F19">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 48'><path d='M24 7c9 0 15 6 15 15 0 10-6.4 19-15 19S9 32 9 22C9 13 15 7 24 7z' fill='%23BE2F19'/><circle cx='18' cy='24' r='2.4'/><circle cx='30' cy='24' r='2.4'/><path d='M15 30c3 4.6 15 4.6 18 0' fill='none' stroke='%23000' stroke-width='2.6' stroke-linecap='round'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gasoek+One&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --hanji:#E7DCC4; --paper:#F7F1E1; --paper-2:#EFE6D0;
+    --ink:#1B1712; --ink-2:#5E5342; --muted:#8E8169;
+    --jusa:#BE2F19; --jusa-soft:#E7C6BC;
+    --line:#CFC1A2; --mine-bg:#22506E; --mine-ink:#F7F1E1;
+    --shadow:0 1px 0 rgba(27,23,18,.08);
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --hanji:#100E0B; --paper:#1D1914; --paper-2:#26211A;
+      --ink:#EFE5D2; --ink-2:#BCAE95; --muted:#8C7F6B;
+      --jusa:#E8583B; --jusa-soft:#4A241C;
+      --line:#383025; --mine-bg:#2F5E7C; --mine-ink:#F2EADA;
+      --shadow:0 1px 0 rgba(0,0,0,.35);
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --hanji:#100E0B; --paper:#1D1914; --paper-2:#26211A;
+    --ink:#EFE5D2; --ink-2:#BCAE95; --muted:#8C7F6B;
+    --jusa:#E8583B; --jusa-soft:#4A241C;
+    --line:#383025; --mine-bg:#2F5E7C; --mine-ink:#F2EADA;
+    --shadow:0 1px 0 rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--hanji); color:var(--ink);
+    font-family:"Noto Sans KR",-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif;
+    font-size:15px; line-height:1.55; -webkit-font-smoothing:antialiased;
+  }
+  img{max-width:100%}
+  [hidden]{display:none!important}
+
+  .room{
+    display:flex; flex-direction:column; height:100%;
+    max-width:560px; margin:0 auto; background:var(--paper);
+    border-left:1px solid var(--line); border-right:1px solid var(--line);
+    padding-top:env(safe-area-inset-top, 0px);
+  }
+
+  header{
+    display:flex; align-items:center; gap:11px;
+    padding:10px 16px; background:var(--paper);
+    border-bottom:2px solid var(--ink); flex:none;
+  }
+  .mask{width:42px;height:42px;flex:none}
+  .who{flex:1;min-width:0}
+  .who h1{
+    font-family:"Gasoek One","Noto Sans KR",sans-serif;
+    font-size:19px; font-weight:400; letter-spacing:-.01em; margin:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .who p{
+    margin:1px 0 0; font-size:11px; letter-spacing:.06em; color:var(--muted);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .tally{
+    flex:none; text-align:right; padding:3px 9px 4px;
+    border:1.5px solid var(--jusa); border-radius:2px;
+    background:var(--jusa-soft); line-height:1.15;
+  }
+  .tally b{
+    display:block; font-family:"Gasoek One","Noto Sans KR",sans-serif;
+    font-weight:400; font-size:17px; color:var(--jusa);
+    font-variant-numeric:tabular-nums;
+  }
+  .tally span{display:block;font-size:9px;letter-spacing:.08em;color:var(--jusa);opacity:.85}
+  .wipe{
+    flex:none; border:1px solid var(--line); background:none; color:var(--muted);
+    font-family:inherit; font-size:11px; padding:5px 8px; border-radius:2px; cursor:pointer;
+  }
+  .wipe:hover{color:var(--ink);border-color:var(--ink-2)}
+
+  .log{
+    flex:1; overflow-y:auto; padding:18px 16px 8px;
+    display:flex; flex-direction:column; gap:5px;
+    background-image:radial-gradient(var(--paper-2) 1px, transparent 1px);
+    background-size:22px 22px;
+  }
+  .day{align-self:center;margin:2px 0 12px;font-size:11px;letter-spacing:.14em;color:var(--muted)}
+  .row{display:flex;gap:8px;align-items:flex-end}
+  .row.mine{justify-content:flex-end}
+  .row .nub{width:26px;flex:none}
+  .row .nub svg{width:26px;height:26px;display:block}
+  .bubble{
+    max-width:78%; padding:8px 12px; background:var(--paper-2);
+    border:1px solid var(--line); border-radius:3px 12px 12px 12px;
+    box-shadow:var(--shadow); word-break:break-word; white-space:pre-wrap;
+  }
+  .row.mine .bubble{
+    background:var(--mine-bg); color:var(--mine-ink);
+    border-color:transparent; border-radius:12px 3px 12px 12px;
+  }
+  .row.cont .nub svg{visibility:hidden}
+  .row.cont .bubble{border-radius:12px}
+  .name{font-size:11px;color:var(--muted);margin:8px 0 1px 34px;letter-spacing:.02em}
+
+  .dots{display:inline-flex;gap:4px;padding:3px 2px}
+  .dots i{width:6px;height:6px;border-radius:50%;background:var(--muted);animation:bob 1s infinite ease-in-out}
+  .dots i:nth-child(2){animation-delay:.16s}
+  .dots i:nth-child(3){animation-delay:.32s}
+  @keyframes bob{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+  @media (prefers-reduced-motion: reduce){.dots i{animation:none;opacity:.55}}
+
+  .dock{
+    flex:none; border-top:2px solid var(--ink); background:var(--paper);
+    padding:9px 12px; padding-bottom:calc(9px + env(safe-area-inset-bottom, 0px));
+  }
+  .quick{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;scrollbar-width:none}
+  .quick::-webkit-scrollbar{display:none}
+  .quick button{
+    flex:none; font-family:inherit; font-size:12px; color:var(--ink-2);
+    background:var(--paper-2); border:1px solid var(--line);
+    border-radius:999px; padding:5px 11px; cursor:pointer; white-space:nowrap;
+  }
+  .quick button:hover{border-color:var(--jusa);color:var(--jusa)}
+  .bar{display:flex;gap:8px;align-items:flex-end}
+  .bar textarea{
+    flex:1; resize:none; font-family:inherit; font-size:16px; line-height:1.4;
+    color:var(--ink); background:var(--paper-2); border:1px solid var(--line);
+    border-radius:4px; padding:9px 11px; max-height:110px; min-height:20px;
+  }
+  .bar textarea::placeholder{color:var(--muted)}
+  .bar textarea:focus,.quick button:focus-visible,.wipe:focus-visible,.send:focus-visible{
+    outline:2px solid var(--jusa); outline-offset:1px;
+  }
+  .send{
+    flex:none; font-family:"Gasoek One","Noto Sans KR",sans-serif; font-weight:400;
+    font-size:15px; color:#F7F1E1; background:var(--jusa); border:none;
+    border-radius:4px; padding:10px 15px; cursor:pointer;
+  }
+  .foot{margin:7px 2px 0;font-size:10.5px;color:var(--muted);letter-spacing:.02em}
+</style>
+</head>
+<body>
+<div class="room">
+  <header>
+    <svg class="mask" viewBox="0 0 48 48" aria-hidden="true">
+      <path d="M8 13c-2.6-3-3-6.6-3-6.6s4.6.2 7.4 2.8" fill="none" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M40 13c2.6-3 3-6.6 3-6.6s-4.6.2-7.4 2.8" fill="none" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M24 7c9 0 15 6 15 15 0 10-6.4 19-15 19S9 32 9 22C9 13 15 7 24 7z" fill="var(--jusa)" stroke="var(--ink)" stroke-width="2.2"/>
+      <path d="M14 18.5l7 2.4M34 18.5l-7 2.4" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round"/>
+      <circle cx="18" cy="24" r="2.1" fill="var(--ink)"/>
+      <circle cx="30" cy="24" r="2.1" fill="var(--ink)"/>
+      <path d="M15 30c3 4.6 15 4.6 18 0" fill="none" stroke="var(--ink)" stroke-width="2.4" stroke-linecap="round"/>
+      <path d="M20.6 30.6l1.4 3.4M27.4 30.6L26 34" stroke="var(--ink)" stroke-width="1.8" stroke-linecap="round"/>
+    </svg>
+    <div class="who">
+      <h1>최X용ver1</h1>
+      <p id="status">지금 단톡방에 있음</p>
+    </div>
+    <div class="tally" title="누적된 귀싸대기 적립 수">
+      <b id="tally">0</b><span>대 적립</span>
+    </div>
+    <button class="wipe" id="wipe" type="button">방 비우기</button>
+  </header>
+
+  <div class="log" id="log" aria-live="polite"></div>
+
+  <div class="dock">
+    <div class="quick" id="quick"></div>
+    <div class="bar">
+      <textarea id="box" rows="1" placeholder="여기에 치면 보토리가 시비를 겁니다" aria-label="메시지 입력"></textarea>
+      <button class="send" id="send" type="button">전송</button>
+    </div>
+    <p class="foot">단톡방 말투를 흉내 낸 패러디입니다. 실제 인물의 발언이 아니고, 하는 말은 전부 지어낸 겁니다.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     대사 창고 — 한 항목이 한 번의 대답.
+     문자열 하나면 단답, 배열이면 두 줄까지.
+     {W} 는 상대가 방금 쓴 낱말이 들어갈 자리.
+     ============================================================ */
+
+  var POOLS = {
+
+    call: [                                   // "야", "척척박사" 하고 부르기만 할 때
+      "왜 찬밥신세",
+      "왜",
+      "뭐",
+      "왜 부르는건데",
+      "니가 부르면 내가 가야되니??",
+      ["왜", "빨리말해 바쁘니깐"]
+    ],
+
+    chatbat: [                                // "왜 찬밥신세" 를 받았을 때
+      "니 찬밥맞잖아^^",
+      ["어 찬밥신세", "그니깐 밥이나 말아먹어"],
+      "알면됏어^^"
+    ],
+
+    greet: [
+      "어 왓냐^^",
+      ["야 척척박사", "니 어디잇다 이제왓어??"],
+      "이제야 기어나오는구나^^",
+      "인사받아줄 기분아니야",
+      ["어", "근데 니 왜왓어"]
+    ],
+
+    what: [                                   // 뭐해 / 심심
+      "나 지금 백화점왓는데^^",
+      ["집에만 잇으니깐 심심해ㅋ", "니는 뭐하냐고"],
+      "치킨기다리고잇어^^",
+      "바빠 니랑 달리^^",
+      ["오늘 하와이 당일치기 갈까 고민중^^", "니는 못가지??ㅋ"],
+      "니가 알아서 뭐하게"
+    ],
+
+    insulted: [                               // 상대가 욕하거나 시비
+      "니주제에 그런말이 나오냐고",
+      ["뭐라고 짓껄엿어 지금", "다시말해보라고"],
+      "니 귀싸대기 1대 적립이야^^",
+      ["그러는넌??", "나보다잘난거 잇냐고"],
+      "꼴깝이야 진짜",
+      ["캡쳐햇어^^", "니 이제 지원 끊긴거라고"],
+      "어이없어서 웃음도안나와정말^^",
+      ["니가 나한테 덜맞앗구나^^", "혓바닥 내밀어"],
+      "니까짓게 감히 나한테"
+    ],
+
+    praise: [                                 // 칭찬받음
+      ["아 뭐야^^", "갑자기 그러니깐 이상하잔아"],
+      "알아^^ 나원래 그래",
+      ["고마워^^", "니도 오늘은 쫌 봐줄만하네"],
+      "이제야 니가 사람같은소리를하네^^",
+      ["귀여워^^", "그렇다고 기어올를생각은 하지말고^^"]
+    ],
+
+    apology: [                                // 사과받음
+      "됏어^^",
+      ["알앗어^^", "이번한번만 봐주는거야"],
+      "반성문 써와",
+      ["진작 그러지그랫어^^", "지원 다시넣어줄게^^"],
+      "말로만 미안하면 다냐고"
+    ],
+
+    sorry_me: [                               // 상대가 상처받았다고 하거나 그만하라고 할 때
+      ["아 미안해;;", "장난친건데 진짜"],
+      "내가잘못햇어;;; 정말미안해",
+      ["미안^^", "내가 오늘 쫌 예민햇어"],
+      "삐졋어?? 풀어 그만"
+    ],
+
+    sad: [                                    // 힘들다 / 우울 / 피곤
+      ["야 그래도 니는 나잇잔아", "힘내라고"],
+      "죽을맛이지??^^ 나도 그래",
+      ["가서 잠이나자렴", "자고일어나면 좀나아"],
+      ["뭐가그렇게 힘든데", "말해보라고 들어줄게^^"],
+      "치킨이나 시켜먹어 내가 쏴줄까^^"
+    ],
+
+    food: [
+      "나 지금 치킨기다리고잇어^^",
+      ["니는 뭐먹엇어??", "밥은 제때먹고다니냐고"],
+      "밥맛떨어지는소리하지말라고",
+      ["나오늘 김치찌개먹엇거든??", "맛잇엇어^^"],
+      "니주제에 무슨 맛잇는거"
+    ],
+
+    work: [                                   // 일 / 회사 / 알바 / 민원
+      ["일 힘드니??^^", "그러게 공부좀 하지그랫어"],
+      "돈 더준다는데 왜안나가",
+      ["나도 오늘 일햇어", "근데 돈못받앗어.."],
+      "퇴근이나 하라고",
+      ["그러니깐 니가 만년 3군인거야", "정신차리라고"]
+    ],
+
+    money: [
+      "하긴^^ 니주제에 돈이어딧어서",
+      ["나는 고급반이라 쫌비싸^^", "니는 못오겟네"],
+      "용돈받고싶어?? 척척박사^^",
+      ["돈은 얼마정도주지??ㅋ", "말해보라고"],
+      "니 한번에 몃백만원짜리 맛사지 받아본적이나 잇냐고"
+    ],
+
+    weather: [
+      "니네집구석은 갠찮냐고",
+      ["날씨가 그렇다고 나한테 말하면 어쩌라고", "내가 하늘이니??"],
+      ["그러게 밖에좀 나가지말라니깐", "감기걸리면 니만손해야^^"],
+      "니는 날씨보다 니 앞날을 걱정하라고^^",
+      "나는 집에잇어서 몰라^^"
+    ],
+
+    boast: [                                  // 상대가 자랑함
+      ["그래서 어쩌라고", "자랑하지말라고^^"],
+      "니 평생의 유일한 자랑거리^^",
+      ["오 못봣지??ㅋ", "나는 그거 이미 잇거든^^"],
+      "인증해",
+      ["증거도없는주제에", "인증부터하라고"]
+    ],
+
+    game: [
+      "너 종건이 이길것같애 이지훈이 이길것같애??ㅋ",
+      ["포켓몬 잘못잡앗어", "아 눈물나"],
+      "니 그거 할시간에 일이나하라고^^",
+      "나랑 한판뜰래??ㅋ"
+    ],
+
+    who: [                                    // 니 누구냐 / AI냐 / 봇이냐
+      "넌 누구세요??",
+      ["뭐라는거야", "말걸지말라고"],
+      "니 지금 나 무시하는거야??^^",
+      ["내가누군지 몰르는주제에", "나한테 훈계를하는건데"],
+      "나 척척그룹 회장님이거든^^"
+    ],
+
+    agree: [                                  // 응 / 그래 / ㅇㅇ
+      "그래 잘생각햇어^^",
+      "어^^",
+      "됏니??",
+      ["알앗으면 됏어", "앞으로도 그렇게하라고"]
+    ],
+
+    laugh: [                                  // ㅋㅋ / ㅎㅎ
+      "웃지말라고",
+      ["뭐가웃겨", "지금 웃음이 나오냐고"],
+      "아웃겨ㅋ",
+      "웃어줄때 작작하라고"
+    ],
+
+    threat: [                                 // 상대가 협박
+      "죽여봐",
+      ["니가먼저협박햇잔아", "캡쳐햇어^^"],
+      "니도 뒤지고싶냐??",
+      ["꼬우면 맞짱뜨던가^^", "떠서 이기던가^^"]
+    ],
+
+    question: [                               // 물음표 붙은 아무 질문
+      ["그걸 왜 나한테 물어봐", "니가 찾아보라고"],
+      "이런것도 몰르냐고^^",
+      ["내가 알려줄테니깐 잘들어^^", "..몰라 나도"],
+      "안알려줄거라고",
+      ["니주제에 그걸 알아서 뭐하게", "어차피 못알아들어^^"]
+    ],
+
+    shorty: [                                 // 아주 짧게 툭 던졌을 때
+      "뭐",
+      "그래서",
+      "말을 똑바로하라고",
+      "어쩌라고",
+      "에휴"
+    ],
+
+    echo: [                                   // 상대 낱말을 되받아치는 틀
+      "{W}?? 니주제에 무슨 {W}야^^",
+      ["{W}이라고 햇어 방금??", "다시말해보라고"],
+      "{W} 같은소리하고잇네^^",
+      ["{W}", "그딴소리 하지말라고"],
+      "니가 {W} 얘기할 처지는 되냐고^^"
+    ],
+
+    general: [                                // 그 밖의 전부
+      "어쩌라고",
+      "그래^^ 그게 니원하는대답이라면^^",
+      "아웃겨ㅋ",
+      ["야 척척박사", "니 갈수록 밥맛이야^^"],
+      "니적당이좀해^^진짜",
+      "말걸지마 앞으로",
+      ["에휴", "니랑은 말이안통해"],
+      "됏고^^",
+      "나 지금 바쁘거든^^",
+      ["그러는넌??", "니가뭘햇다고"],
+      "니주제에 무슨말이 그렇게많아^^",
+      "내가 이래서 너를싫어하는거야^^",
+      "니 귀싸대기 1대 적립이야^^",
+      "알앗어^^",
+      ["하지말라고", "몃번을 말해"],
+      "재밋네^^",
+      ["오늘은 봐주는거야", "고마운줄알라고^^"],
+      "또 망상속에서 허우적대고잇구나^^"
+    ],
+
+    nudge: [                                  // 한참 답 없을 때 먼저 찝쩍
+      "야",
+      "대답하라고",
+      "니 지금 나 읽고 씹는거야??^^",
+      "야 척척박사",
+      "빨리 대답좀해보라고",
+      "에휴",
+      "니 귀싸대기 1대 적립이야^^"
+    ],
+
+    opener: [                                 // 방 열었을 때 첫마디
+      ["야 척척박사", "니 어디잇다 이제왓어??"],
+      ["야 척척박사", "왜이렇게 연락이없어"],
+      ["척척아", "오늘 기분이좀 그러니깐 살살말걸어^^"],
+      ["야 척척박사", "나 오늘 기분안좋으니깐 조심해"]
+    ]
+  };
+
+  /* ---------- 어떤 창고를 열지 고르는 규칙 (위에서부터 먼저 맞는 것) ---------- */
+
+  var RULES = [
+    ["chatbat",  /찬밥/],
+    ["call",     /^\s*(야+\s*척척박사|야+\s*척척아|야+\s*보토리|야+\s*최x?용\S*|척척박사|척척아|보토리|최x?용\S*|야+|어이|저기요?)\s*[.!?~^]*\s*$/i],
+    ["greet",    /안녕|하이|ㅎㅇ|여보세요|반가|왓어|왔어|왔냐|굿모닝/],
+    ["who",      /누구|니이름|네이름|이름이|정체|ai|에이아이|봇이|챗봇|사람이야|기계/i],
+    ["apology",  /미안|죄송|사과|잘못햇|잘못했|내탓/],
+    ["sorry_me", /그만해|상처|기분나빠|기분 나빠|너무해|심하다|선넘|서운/],
+    ["praise",   /잘생|멋있|멋잇|최고|대단|존경|좋아해|사랑|귀여|킹|갓|짱/],
+    ["threat",   /죽여|때릴|패버|뒤져|뒤질|가만안|죽을래|맞을래/],
+    ["insulted", /바보|멍청|못생|찌질|찐따|꺼져|닥쳐|싫어|미친|병신|ㅄ|ㅗ|거지|한심|역겨|재수없|쓰레기|루저|백수/],
+    ["sad",      /힘들|피곤|졸려|지쳐|우울|슬퍼|슬프|외로|죽겟|죽겠|울고|눈물|퇴사하고싶/],
+    ["work",     /회사|출근|퇴근|야근|업무|민원|알바|일하|일해|직장|상사|과장|팀장|보고서|공무원/],
+    ["food",     /밥|먹|치킨|배고|점심|저녁|아침밥|술|맥주|소주|커피|간식|메뉴/],
+    ["money",    /돈|월급|비싸|가난|부자|용돈|월세|카드값|통장|적금/],
+    ["weather",  /날씨|춥|추워|더워|덥다|비와|비온|눈와|장마|미세먼지/],
+    ["game",     /게임|롤|포켓몬|축구|야구|피시방|pc방|배그|롤드컵/i],
+    ["boast",    /샀어|샀다|갔다왔|다녀왔|붙었|합격|이겼|일등|1등|자랑|성공|승진/],
+    ["laugh",    /^[ㅋㅎ\s.!~]+$|웃기|ㅋㅋㅋ/],
+    ["agree",    /^\s*(ㅇㅇ|응+|네+|어+|그래+|알았어|알앗어|오케이|ok|okay|ㅇㅋ)[.!?~^\s]*$/i]
+  ];
+
+  /* ============================================================
+     엔진
+     ============================================================ */
+
+  var MAXLINES = 2;
+
+  var log = document.getElementById("log");
+  var box = document.getElementById("box");
+  var sendBtn = document.getElementById("send");
+  var tallyEl = document.getElementById("tally");
+  var quickEl = document.getElementById("quick");
+  var wipeBtn = document.getElementById("wipe");
+
+  var tally = 0;
+  var lastSide = null;
+  var nudgeTimer = null;
+  var nudgeCount = 0;
+  var bags = {};           // 창고별 안 뽑은 것 목록 — 같은 말 연달아 안 나오게
+  var busy = false;
+
+  function draw(pool){
+    var src = POOLS[pool] || POOLS.general;
+    if (!bags[pool] || !bags[pool].length){
+      bags[pool] = src.slice();
+      // 섞기
+      for (var i = bags[pool].length - 1; i > 0; i--){
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = bags[pool][i]; bags[pool][i] = bags[pool][j]; bags[pool][j] = t;
+      }
+    }
+    var pick = bags[pool].pop();
+    return Array.isArray(pick) ? pick.slice() : [pick];
+  }
+
+  // 상대 말에서 되받아칠 만한 낱말 하나 고르기
+  function keyword(text){
+    var words = text.replace(/[^가-힣a-zA-Z0-9\s]/g, " ").split(/\s+/);
+    var best = "";
+    for (var i = 0; i < words.length; i++){
+      var w = words[i];
+      if (w.length < 2 || w.length > 6) continue;
+      if (/^(그래|그럼|근데|진짜|정말|아니|너는|나는|내가|니가|우리|오늘|내일|어제|지금|이거|저거|그거|뭐야|했어|한다|하고|있어|없어)$/.test(w)) continue;
+      if (w.length > best.length) best = w;
+    }
+    return best;
+  }
+
+  function pickPool(text){
+    for (var i = 0; i < RULES.length; i++){
+      if (RULES[i][1].test(text)) return RULES[i][0];
+    }
+    if (text.replace(/\s/g, "").length <= 2) return "shorty";
+    if (/[?？]|까\s*$|니\s*$|냐\s*$/.test(text)) return "question";
+    return null;   // general 또는 echo
+  }
+
+  function respond(text){
+    var pool = pickPool(text);
+    var lines;
+    if (pool){
+      lines = draw(pool);
+    } else {
+      var w = keyword(text);
+      if (w && Math.random() < 0.45){
+        lines = draw("echo").map(function(s){ return s.split("{W}").join(w); });
+      } else {
+        lines = draw("general");
+      }
+    }
+    return lines.slice(0, MAXLINES);
+  }
+
+  /* ---------- 화면 ---------- */
+
+  function nub(){
+    return '<span class="nub"><svg viewBox="0 0 48 48" aria-hidden="true">'
+      + '<path d="M24 7c9 0 15 6 15 15 0 10-6.4 19-15 19S9 32 9 22C9 13 15 7 24 7z" fill="var(--jusa)" stroke="var(--ink)" stroke-width="2.4"/>'
+      + '<circle cx="18" cy="24" r="2.4" fill="var(--ink)"/><circle cx="30" cy="24" r="2.4" fill="var(--ink)"/>'
+      + '<path d="M15 30c3 4.6 15 4.6 18 0" fill="none" stroke="var(--ink)" stroke-width="2.6" stroke-linecap="round"/>'
+      + '</svg></span>';
+  }
+  function atBottom(){ return log.scrollHeight - log.scrollTop - log.clientHeight < 90; }
+  function toBottom(f){ if (f || atBottom()) log.scrollTop = log.scrollHeight; }
+
+  function addBubble(side, text){
+    var stick = atBottom();
+    if (side === "them" && lastSide !== "them"){
+      var n = document.createElement("div");
+      n.className = "name";
+      n.textContent = "최X용ver1";
+      log.appendChild(n);
+    }
+    var row = document.createElement("div");
+    row.className = "row " + (side === "me" ? "mine" : "") + (lastSide === side ? " cont" : "");
+    if (side === "them") row.insertAdjacentHTML("beforeend", nub());
+    var b = document.createElement("div");
+    b.className = "bubble";
+    b.textContent = text;
+    row.appendChild(b);
+    log.appendChild(row);
+    lastSide = side;
+    toBottom(stick);
+  }
+
+  function typingRow(){
+    var stick = atBottom();
+    var row = document.createElement("div");
+    row.className = "row";
+    row.insertAdjacentHTML("beforeend", nub());
+    var b = document.createElement("div");
+    b.className = "bubble";
+    b.innerHTML = '<span class="dots"><i></i><i></i><i></i></span>';
+    row.appendChild(b);
+    log.appendChild(row);
+    toBottom(stick);
+    return row;
+  }
+
+  function bump(text){
+    var hits = (text.match(/적립/g) || []).length;
+    if (!hits) return;
+    tally += hits;
+    tallyEl.textContent = String(tally);
+  }
+
+  function say(lines, firstDelay){
+    busy = true;
+    var typing = typingRow();
+    var i = 0;
+    setTimeout(function step(){
+      if (i === 0) typing.remove();
+      if (i >= lines.length){ busy = false; armNudge(); return; }
+      addBubble("them", lines[i]);
+      bump(lines[i]);
+      i++;
+      if (i < lines.length) setTimeout(step, 700 + Math.random()*500);
+      else { busy = false; armNudge(); }
+    }, firstDelay);
+  }
+
+  function armNudge(){
+    clearTimeout(nudgeTimer);
+    if (nudgeCount >= 3) return;
+    nudgeTimer = setTimeout(function(){
+      nudgeCount++;
+      say(draw("nudge"), 200);
+    }, 32000 + Math.random()*12000);
+  }
+
+  function send(text){
+    text = (text || "").trim();
+    if (!text || busy) return;
+    clearTimeout(nudgeTimer);
+    nudgeCount = 0;
+    addBubble("me", text);
+    box.value = "";
+    box.style.height = "auto";
+    say(respond(text), 500 + Math.random()*600);
+  }
+
+  /* ---------- 입력 ---------- */
+
+  sendBtn.addEventListener("click", function(){ send(box.value); });
+  box.addEventListener("keydown", function(e){
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing){
+      e.preventDefault();
+      send(box.value);
+    }
+  });
+  box.addEventListener("input", function(){
+    box.style.height = "auto";
+    box.style.height = Math.min(box.scrollHeight, 110) + "px";
+  });
+
+  ["야 척척박사","왜 찬밥신세","인증해","뭐해??","미안해","니가 그렇게 잘났어?"].forEach(function(q){
+    var b = document.createElement("button");
+    b.type = "button";
+    b.textContent = q;
+    b.addEventListener("click", function(){ send(q); });
+    quickEl.appendChild(b);
+  });
+
+  wipeBtn.addEventListener("click", function(){
+    clearTimeout(nudgeTimer);
+    busy = false; tally = 0; nudgeCount = 0; lastSide = null; bags = {};
+    tallyEl.textContent = "0";
+    log.innerHTML = "";
+    boot();
+  });
+
+  function boot(){
+    var d = document.createElement("div");
+    d.className = "day";
+    var t = new Date();
+    d.textContent = "——— " + t.getFullYear() + "년 " + (t.getMonth()+1) + "월 " + t.getDate() + "일 ———";
+    log.appendChild(d);
+    say(draw("opener"), 600);
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
